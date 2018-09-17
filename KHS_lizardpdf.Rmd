@@ -1,0 +1,289 @@
+---
+title: "Visualizacion de datos en Lizard"
+author: "Karen Huentenao Silva"
+date: "16 de septiembre de 2018"
+output: pdf_document
+bibliography: bibliografia.bib
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, cache = FALSE, message = FALSE)
+```
+
+
+## Introduccion
+
+Los libros de bioestadistica nos muestran como podemos sacar el mejor provecho de nuestros datos y dependiendo de su composicion  que tipo de analisis o graficos son los que corresponden aplicar [@berke2006primer][@zar1999biostatistical].
+El trabajo en base de datos va a depender del tipo de datos que tengamos como de la pregunta a evaluar. Sin embargo en paper publicados en diferentes revistas es comun ver graficos que no son del todo adecuados para mostrar los resultados. Si bien el mensaje que se quiere mostrar queda claro al lector, siguen existiendo mejores formas de mostrar y presentar los resultados. Entonces en que basarnos para elegir el grafico.
+
+Uno de los principales objetivos de este reporte mas que la parte biologica de los datos con los que se esta tabajando es realizar una comparacion en formas de presentar datos y realizar una exploracion mediante modelos aplicados.
+
+## Metodos
+Este trabajo fue realizado basado en una base de datos de alometria en lagartos [@meiri2010length] con 915 observaciones.
+Se utilizo el programa R. Para poder trabajar en R y realizar una exploracion de datos se utilizaron diferentes de paquetes como el tidyverse [@wickham2017tidyverse], dismo, tidyr [@wickham2018package]
+dplyr[@wickham2014tidy], rmarkdown [@allaire1rmarkdown], knirt[@xie2015dynamic], stargazer[@hlavac2018stargazer].
+En particular para los graficos se utilizo el paquete ggplot2[@wickham2016ggplot2].
+Para realizar los modelos y obtener tablas con la informacion pertinente de cada modelo, asi como tambien para la seleccion de modelos se utilizaron los paquetes broom[@robinson2017broom] y MuMln.
+
+
+## Resultados
+
+```{r}
+
+
+
+setwd("D:/Desktop/KHS")
+#paquetes
+library(dplyr)
+library(broom)
+library(knitr)
+library(rmarkdown)
+library(stargazer)
+library(tidyverse)
+library(dismo)
+library(tidyr)
+#gather y spread
+library(ggplot2)
+library(broom)
+
+
+#########################
+#inicio
+########################
+library(readxl)
+lizard2 <- read_excel("lizard2.xlsx")
+View(lizard2)
+
+library(readxl)
+lizard2 <- read_excel("lizard2.xlsx")
+View(lizard2)
+
+saveRDS(lizard2, "lizard.rds")
+
+li <- readRDS("lizard.rds")
+View(li)
+
+#summary(li)
+
+
+library(dplyr)
+library(broom)
+library(knitr)
+
+#################################
+#continuacion
+#################################
+#aqui quiero saber que variables tengo
+#colnames(li)
+#unique(li$infraorder)
+#suborder son muchos para trabajar con ellos
+#unique(li$suborder)
+#family muestra las familia pero SVL tambien. y family tiene menos
+#unique(li$Family)
+#unique(li$SVL)
+#unique(li$limbs)
+#unique(li$Sex)
+```
+
+
+La longitud total de lizard es `r round(mean(li$mm),2)`
+
+El peso total de lizard es `r round(mean(li$Weight),2)`
+
+
+### Graficos de diagrama de puntos
+
+```{r}
+Me <- lm(data=li, mm ~ Weight)
+ME<-tidy(Me)
+kable(ME, caption = "Resumen del modelo lineal")
+#Eso de arriba en el chunk sirve para ponerlos titulos de las tablas
+
+
+
+```
+
+
+```{r, fig.cap="Modelo lineal lizard"}
+g<-ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color=Family))+theme_classic()
+g
+
+```
+
+
+```{r, fig.cap="Modelo lineal lizard con escala log"}
+k<-ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color=Family))+theme_classic()+scale_y_log10()+ scale_x_log10()
+k
+```
+
+primero el grafico de puntos donde solo quiero mostrar la tendencia general de todas las categorias, 
+realizando la relacion entre  peso y longitud total (mm)
+```{r}
+ggplot(li, aes(x = mm, y = Weight)) + geom_point()+theme_classic()
+```
+
+Luego si se quisiera ver la relacion del peso total y la longitud total  en la categoria SVL, podria verse de dos maneras. donde queda claro que la segunda grafica es mucho mejor si se aplica log a ambas variables.
+```{r}
+ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color = SVL))+ geom_smooth(aes(fill = SVL), method = "lm")
+S<-ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color=SVL))+theme_classic()+scale_y_log10()+ scale_x_log10()
+S
+```
+Ahora si quisieramos seleccionar una tendencia, podriamos utilizar algunos modelos lineales
+
+```{r}
+ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color = infraorder))+ geom_smooth(aes(fill = infraorder))+theme_classic()
+ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color = infraorder))+ geom_smooth(aes(fill = infraorder), method = "lm")+theme_classic()
+
+r<-ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color=infraorder))+theme_classic()+scale_y_log10()+ scale_x_log10()
+r
+s<-ggplot(li, aes(x = mm, y = Weight)) + geom_point(aes(color=infraorder))+theme_classic()+scale_y_log10()+ scale_x_log10()+ geom_smooth(aes(fill = infraorder), method = "lm")
+s
+```
+
+#### Modelos lm
+```{r}
+Mmwi <- lm(data=li, mm ~ Weight)
+MmwI<-tidy(Mmwi)
+kable(MmwI, caption = "Resumen del modelo lineal de todas la variables utilizando mm y weigth")
+
+F1 <- lm(Weight~Family, data=li)
+glance(F1)
+View(tidy(F1))
+F11<-tidy(F1)
+kable(F11, caption = "Resumen del modelo lineal de cada familia de lizard mm y weigth")
+
+F2 <- lm(mm~Family, data=li)
+glance(F2)
+View(tidy(F2))
+F22<-tidy(F2)
+kable(F22, caption = "Resumen del modelo lineal de cada familia de lizard variable y= mm ")
+#modelo SVL lm, ttest, aov
+
+S1 <- lm(Weight~SVL, data=li)
+glance(S1)
+View(tidy(S1))
+S11<-tidy(S1)
+kable(S11, caption = "Resumen del modelo lineal de cada SVL de lizard variable y= weigth")
+
+S2 <- lm(mm~SVL, data=li)
+glance(S2)
+View(tidy(S2))
+S22<-tidy(F2)
+kable(F22, caption = "Resumen del modelo lineal de cada SVL de lizard Y = mm")
+#modelo inrfaorder lm
+I1 <- lm(Weight~infraorder, data=li)
+glance(I1)
+View(tidy(I1))
+I11<-tidy(I1)
+kable(I11, caption = "Resumen del modelo lineal de cada infraorden de lizard weigth")
+
+I2 <- lm(mm~infraorder, data=li)
+glance(I2)
+View(tidy(I2))
+I22<-tidy(I1)
+kable(I22, caption = "Resumen del modelo lineal de cada infraorder de lizard mm")
+```
+
+
+### Graficos Boxplot
+Para el caso de la variable Familia, al tener  tantos datos extremos el hecho de cambiar la escala mejora la visualizacion de datos
+```{r, fig.cap="Graficos de boxplot para cada familia"}
+ggplot(li, aes(x = Family, y = mm)) + geom_boxplot(aes(color = Family))+theme_classic()
+
+
+```
+
+```{r, fig.cap="Modelo lineal lizard en escala log"}
+ggplot(li, aes(x = Family, y = mm)) + geom_boxplot(aes(color = Family))+theme_classic()+scale_y_log10()
+```
+
+
+
+Aqui tenemos un boxplot aplicando los datos normales y luego transformando los ejes a log. la diferencia es clara
+```{r, fig.cap="Modelo lineal de infraordenes de  lizard"}
+ggplot(li, aes(x = infraorder, y = mm)) + geom_boxplot(aes(fill = infraorder))+theme_classic()
+
+```
+
+```{r, fig.cap="Modelo lineal lizard en escala log"}
+a<- ggplot(li, aes(x = infraorder, y = mm)) + geom_boxplot(aes(fill = infraorder))+theme_classic()+scale_y_log10()
+a
+#boxplot infraorder pero debo aplicar log para ve rla difrencia visual
+```
+
+Estos resultados cambiando la amplitud de los ejes se vuelven a repetir para la variable limbs
+```{r, fig.cap="Modelo lineal lizard"}
+ggplot(li, aes(x = limbs, y = Weight)) + geom_boxplot(aes(fill = infraorder))+theme_classic()
+
+```
+
+```{r, fig.cap="Modelo lineal lizard en escala log"}
+h<-ggplot(li, aes(x = limbs, y = Weight)) + geom_boxplot(aes(fill = infraorder))+theme_classic()+scale_y_log10()
+h
+```
+
+
+#### Modelos aov y t.test
+
+```{r}
+S3 <-aov(Weight~infraorder, data=li)
+glance(S3)
+View(tidy(S3))
+S33<-tidy(S3)
+kable(S33, caption = "Resumen del modelo ANDEVA de cada infraorden de lizard  weigth")
+
+S4 <- aov(mm~infraorder, data=li)
+glance(S4)
+View(tidy(S4))
+S44<-tidy(S4)
+kable(S44, caption = "Resumen del modelo ANDEVA de cada infraorden de lizard  mm")
+
+I3 <-t.test(Weight~infraorder, data=li)
+glance(I3)
+View(tidy(I3))
+I33<-tidy(I3)
+kable(I33, caption = "Resumen del modelo T.TEST de cada infraorden de lizard  WEIGTH")
+
+I4 <- t.test(mm~infraorder, data=li)
+glance(I4)
+View(tidy(I4))
+I44<-tidy(I4)
+kable(I44, caption = "Resumen del modelo T.TEST de cada infraorden de lizard  mm")
+
+I5 <-aov(Weight~infraorder, data=li)
+glance(I5)
+View(tidy(I5))
+I55<-tidy(I5)
+kable(I55, caption = "Resumen del modelo ANDEVAde cada infraorden de lizard  mm")
+
+I6 <- aov(mm~infraorder, data=li)
+glance(I6)
+View(tidy(I6))
+I66<-tidy(I6)
+kable(I66, caption = "Resumen del modelo ANDEVAde cada infraorden de lizard  mm")
+
+I7 <- aov(mm~infraorder:Weight, data=li)
+glance(I7)
+View(tidy(I7))
+I77<-tidy(I7)
+kable(I77, caption = "Resumen del modelo ANDEVAde cada infraorden de lizard  mm")
+
+```
+
+### Graficos de Violin 
+En los graficos de violin tambien es apreciable la difrencia de escala en los distintos graficos.
+ESte tipo de graficos muestran donde se concentran la mayoria de los datos y tiene la capacidad de mostrar como estan distribuidos para una msiam categoria similar a una curva normal.
+```{r, fig.cap="Graficos de violin para los infraordenes con diferentes escalas"}
+ggplot(li, aes(x = infraorder, y = Weight)) + geom_violin(aes(fill = infraorder))+theme_classic()
+c<-ggplot(li, aes(x = infraorder, y = Weight)) + geom_violin(aes(fill = infraorder))+scale_y_log10()+theme_classic()
+c
+ggplot(li, aes(x = infraorder, y = mm)) + geom_violin(aes(fill = infraorder))+theme_classic()
+d <-ggplot(li, aes(x = infraorder, y = mm)) + geom_violin(aes(fill = infraorder))+theme_classic()+scale_y_log10()
+d
+```
+
+
+
+## Conclusion
+la eleccion de mostrar los datos va adpeender del tipo de variable que tengamos, estas pueden ser de razon, categoricas principalmente. Junto con esto, no siempre se tienen los datos como uno los quisiera por lo que es necesario realizar un exploracion previa.
+
+## Referencias
